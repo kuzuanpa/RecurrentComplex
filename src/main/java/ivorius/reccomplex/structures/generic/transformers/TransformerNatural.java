@@ -5,7 +5,10 @@
 
 package ivorius.reccomplex.structures.generic.transformers;
 
+import com.bioxx.tfc.Core.TFC_Core;
+import com.bioxx.tfc.WorldGen.DataLayer;
 import com.google.gson.*;
+import cpw.mods.fml.common.FMLLog;
 import ivorius.ivtoolkit.blocks.BlockCoord;
 import ivorius.ivtoolkit.math.IvVecMathHelper;
 import ivorius.ivtoolkit.tools.MCRegistry;
@@ -28,12 +31,14 @@ import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
+import org.apache.logging.log4j.Level;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static com.bioxx.tfc.WorldGen.TFCChunkProviderGenerate.*;
 /**
  * Created by lukas on 25.05.14.
  */
@@ -72,9 +77,13 @@ public class TransformerNatural extends TransformerSingleBlock<NBTNone>
         World world = context.world;
         Random random = context.random;
 
+        float rain = rainfallLayer[18] == null ? DataLayer.RAIN_125.floatdata1 : rainfallLayer[18].floatdata1;
+        DataLayer rock1 = rockLayer1[18] == null ? DataLayer.GRANITE : rockLayer1[18];
+        Block topBlock = TFC_Core.getTypeForGrassWithRain(rock1.data1, rain);
+        Block fillerBlock = TFC_Core.getTypeForDirtFromGrass(topBlock);
+
+        FMLLog.log(Level.FATAL,topBlock.getUnlocalizedName()+fillerBlock.getLocalizedName());
         BiomeGenBase biome = world.getBiomeGenForCoords(coord.x, coord.z);
-        Block topBlock = biome.topBlock != null ? biome.topBlock : Blocks.air;
-        Block fillerBlock = biome.fillerBlock != null ? biome.fillerBlock : Blocks.air;
         Block mainBlock = world.provider.dimensionId == -1 ? Blocks.netherrack : (world.provider.dimensionId == 1 ? Blocks.end_stone : Blocks.stone);
 
         boolean useStoneBlock = hasBlockAbove(world, coord.x, coord.y, coord.z, mainBlock);
