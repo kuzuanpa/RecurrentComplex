@@ -7,6 +7,7 @@ package ivorius.reccomplex.structures.generic.transformers;
 
 import com.bioxx.tfc.Core.TFC_Core;
 import com.bioxx.tfc.WorldGen.DataLayer;
+import com.bioxx.tfc.WorldGen.TFCProvider;
 import com.google.gson.*;
 import cpw.mods.fml.common.FMLLog;
 import ivorius.ivtoolkit.blocks.BlockCoord;
@@ -44,7 +45,7 @@ import static com.bioxx.tfc.WorldGen.TFCChunkProviderGenerate.*;
  */
 public class TransformerNatural extends TransformerSingleBlock<NBTNone>
 {
-    public static final double DEFAULT_NATURAL_EXPANSION_DISTANCE = 4.0;
+    public static final double DEFAULT_NATURAL_EXPANSION_DISTANCE = 40.0;
     public static final double DEFAULT_NATURAL_EXPANSION_RANDOMIZATION = 6.0;
 
     public BlockMatcher sourceMatcher;
@@ -77,13 +78,17 @@ public class TransformerNatural extends TransformerSingleBlock<NBTNone>
         World world = context.world;
         Random random = context.random;
 
-        float rain = rainfallLayer[18] == null ? DataLayer.RAIN_125.floatdata1 : rainfallLayer[18].floatdata1;
-        DataLayer rock1 = rockLayer1[18] == null ? DataLayer.GRANITE : rockLayer1[18];
-        Block topBlock = TFC_Core.getTypeForGrassWithRain(rock1.data1, rain);
-        Block fillerBlock = TFC_Core.getTypeForDirtFromGrass(topBlock);
-
-        FMLLog.log(Level.FATAL,topBlock.getUnlocalizedName()+fillerBlock.getLocalizedName());
-        BiomeGenBase biome = world.getBiomeGenForCoords(coord.x, coord.z);
+        Block topBlock;
+        Block fillerBlock;
+        if(context.world.provider instanceof TFCProvider) {
+            DataLayer rock1 = rockLayer1[18] == null ? DataLayer.GRANITE : rockLayer1[18];
+            topBlock = TFC_Core.getTypeForGrassWithRain(rock1.data1, rainfallLayer[18] == null ? DataLayer.RAIN_125.floatdata1 : rainfallLayer[18].floatdata1);
+            fillerBlock = TFC_Core.getTypeForDirtFromGrass(topBlock);
+        }else {
+            BiomeGenBase biome = world.getBiomeGenForCoords(coord.x, coord.z);
+            topBlock = biome.topBlock != null ? biome.topBlock : Blocks.air;
+            fillerBlock = biome.fillerBlock != null ? biome.fillerBlock : Blocks.air;
+        }
         Block mainBlock = world.provider.dimensionId == -1 ? Blocks.netherrack : (world.provider.dimensionId == 1 ? Blocks.end_stone : Blocks.stone);
 
         boolean useStoneBlock = hasBlockAbove(world, coord.x, coord.y, coord.z, mainBlock);
