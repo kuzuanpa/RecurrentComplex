@@ -5,6 +5,10 @@
 
 package ivorius.reccomplex.structures.generic;
 
+import com.bioxx.tfc.Core.TFC_Climate;
+import com.bioxx.tfc.Core.TFC_Core;
+import com.bioxx.tfc.WorldGen.DataLayer;
+import com.bioxx.tfc.WorldGen.TFCProvider;
 import com.google.gson.*;
 import ivorius.ivtoolkit.blocks.BlockCoord;
 import ivorius.ivtoolkit.blocks.IvBlockCollection;
@@ -25,6 +29,7 @@ import ivorius.reccomplex.structures.generic.transformers.*;
 import ivorius.reccomplex.utils.*;
 import ivorius.ivtoolkit.tools.Pairs;
 import ivorius.reccomplex.worldgen.inventory.InventoryGenerationHandler;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
@@ -42,6 +47,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.bioxx.tfc.WorldGen.TFCChunkProviderGenerate.*;
+import static com.bioxx.tfc.WorldGen.TFCChunkProviderGenerate.rockLayer3;
 
 /**
  * Created by lukas on 24.05.14.
@@ -101,11 +109,27 @@ public class GenericStructureInfo implements StructureInfo<GenericStructureInfo.
     {
         return rotatable;
     }
-
     @Override
     public boolean isMirrorable()
     {
         return mirrorable;
+    }
+    public DataLayer defaultIfNull(DataLayer[] nullCheck){return nullCheck==null||nullCheck[18] == null ? DataLayer.GRANITE : nullCheck[18];}
+
+    public IvBlockCollection transformVanillaBlocksToTFC(IvBlockCollection originalBlocks, World world, BlockCoord coord,DataLayer[][] dataLayers){
+        try {
+
+
+            int i = TFC_Core.getRockLayerFromHeight(world, coord.x, coord.y, coord.z);
+            DataLayer layer = i == 0 ? defaultIfNull(dataLayers[0]) : i == 1 ? defaultIfNull(dataLayers[1]) : defaultIfNull(dataLayers[2]);
+            Block grass = TFC_Core.getTypeForGrassWithRain(layer.data1, dataLayers[4][18] == null ? DataLayer.RAIN_125.floatdata1 : dataLayers[4][18].floatdata1);
+            Block dirt = TFC_Core.getTypeForDirtFromGrass(grass);
+            Block stone = layer.block;
+            Block sand = TFC_Core.getTypeForSand(layer.data2);
+        }catch (NullPointerException e){
+            return null;
+        }
+        return originalBlocks;
     }
 
     @Override
@@ -114,6 +138,7 @@ public class GenericStructureInfo implements StructureInfo<GenericStructureInfo.
         World world = context.world;
         Random random = context.random;
         IvWorldData worldData = constructWorldData(world);
+        DataLayer[][] data = null;
 
         // The world initializes the block event array after it generates the world - in the constructor
         // This hackily sets the field to a temporary value. Yay.
@@ -121,6 +146,22 @@ public class GenericStructureInfo implements StructureInfo<GenericStructureInfo.
             RCAccessorWorldServer.ensureBlockEventArray((WorldServer) world); // Hax
 
         IvBlockCollection blockCollection = worldData.blockCollection;
+        if(world.provider instanceof TFCProvider){
+            if (TFC_Climate.getCacheManager(world) == null) return;
+
+            DataLayer[] rockLayer1i = TFC_Climate.getCacheManager(world).loadRockLayerGeneratorData(rockLayer1, context.lowerCoord().x,context.lowerCoord().z, 16, 16, 0);
+            DataLayer[] rockLayer2i = TFC_Climate.getCacheManager(world).loadRockLayerGeneratorData(rockLayer2, context.lowerCoord().x,context.lowerCoord().z, 16, 16, 1);
+            DataLayer[] rockLayer3i = TFC_Climate.getCacheManager(world).loadRockLayerGeneratorData(rockLayer3, context.lowerCoord().x,context.lowerCoord().z, 16, 16, 2);
+            DataLayer[] evtLayeri = TFC_Climate.getCacheManager(world).loadEVTLayerGeneratorData(evtLayer, context.lowerCoord().x,context.lowerCoord().z, 16, 16);
+            DataLayer[] rainfallLayeri = TFC_Climate.getCacheManager(world).loadRainfallLayerGeneratorData(rainfallLayer, context.lowerCoord().x,context.lowerCoord().z, 16, 16);
+            DataLayer[] stabilityLayeri = TFC_Climate.getCacheManager(world).loadStabilityLayerGeneratorData(stabilityLayer, context.lowerCoord().x,context.lowerCoord().z, 16, 16);
+            DataLayer[] drainageLayeri = TFC_Climate.getCacheManager(world).loadDrainageLayerGeneratorData(drainageLayer, context.lowerCoord().x,context.lowerCoord().z, 16, 16);
+
+            data= new DataLayer[][]{rockLayer1i,rockLayer2i,rockLayer3i,evtLayeri,rainfallLayeri,stabilityLayeri,drainageLayeri};
+            blockCollection= transformVanillaBlocksToTFC(blockCollection,world,context.lowerCoord(),data);
+        }
+        //if any Exception happened when doing TFC transform, cancel the generates.
+        if(blockCollection==null)return;
         int[] areaSize = new int[]{blockCollection.width, blockCollection.height, blockCollection.length};
         BlockCoord origin = context.lowerCoord();
 
@@ -141,7 +182,7 @@ public class GenericStructureInfo implements StructureInfo<GenericStructureInfo.
                 Transformer transformer = pair.getLeft();
                 NBTStorable transformerData = pair.getRight();
                 if (transformer.generatesInPhase(transformerData, Transformer.Phase.BEFORE))
-                    transformer.transform(transformerData, Transformer.Phase.BEFORE, context, worldData, transformers);
+                    transformer.transform(transformerData, Transformer.Phase.BEFORE, context, worldData, transformers, data);
             }
         }
 
@@ -169,6 +210,7 @@ public class GenericStructureInfo implements StructureInfo<GenericStructureInfo.
                                     world.setTileEntity(worldPos.x, worldPos.y, worldPos.z, tileEntity);
                                     tileEntity.updateContainingBlockInfo();
 
+
                                     if (!context.generateAsSource)
                                     {
                                         if (tileEntity instanceof IInventory)
@@ -195,7 +237,7 @@ public class GenericStructureInfo implements StructureInfo<GenericStructureInfo.
                 Transformer transformer = pair.getLeft();
                 NBTStorable transformerData = pair.getRight();
                 if (transformer.generatesInPhase(transformerData, Transformer.Phase.AFTER))
-                    transformer.transform(transformerData, Transformer.Phase.AFTER, context, worldData, transformers);
+                    transformer.transform(transformerData, Transformer.Phase.AFTER, context, worldData, transformers, data);
             }
         }
 

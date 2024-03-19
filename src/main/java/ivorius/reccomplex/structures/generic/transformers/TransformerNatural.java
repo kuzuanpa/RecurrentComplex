@@ -5,11 +5,11 @@
 
 package ivorius.reccomplex.structures.generic.transformers;
 
+import com.bioxx.tfc.Core.TFC_Climate;
 import com.bioxx.tfc.Core.TFC_Core;
 import com.bioxx.tfc.WorldGen.DataLayer;
 import com.bioxx.tfc.WorldGen.TFCProvider;
 import com.google.gson.*;
-import cpw.mods.fml.common.FMLLog;
 import ivorius.ivtoolkit.blocks.BlockCoord;
 import ivorius.ivtoolkit.math.IvVecMathHelper;
 import ivorius.ivtoolkit.tools.MCRegistry;
@@ -32,7 +32,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
-import org.apache.logging.log4j.Level;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -71,25 +70,43 @@ public class TransformerNatural extends TransformerSingleBlock<NBTNone>
         return sourceMatcher.apply(state);
     }
 
+
+
+     public DataLayer defaultIfNull(DataLayer[] nullCheck){return nullCheck==null || nullCheck[18] == null ? DataLayer.GRANITE : nullCheck[18];}
     @Override
-    public void transformBlock(NBTNone instanceData, Phase phase, StructureSpawnContext context, BlockCoord coord, IBlockState sourceState)
+    public void transformBlock(NBTNone instanceData, Phase phase, StructureSpawnContext context, BlockCoord coord, IBlockState sourceState, DataLayer[][] TFCDataLayers)
     {
         // TODO Fix for partial generation
         World world = context.world;
         Random random = context.random;
 
         Block topBlock;
+        DataLayer layer = null;
+        boolean useTFCBlock=false;
         Block fillerBlock;
+        Block mainBlock=world.provider.dimensionId == -1 ? Blocks.netherrack : (world.provider.dimensionId == 1 ? Blocks.end_stone : Blocks.stone);
         if(context.world.provider instanceof TFCProvider) {
-            DataLayer rock1 = rockLayer1[18] == null ? DataLayer.GRANITE : rockLayer1[18];
-            topBlock = TFC_Core.getTypeForGrassWithRain(rock1.data1, rainfallLayer[18] == null ? DataLayer.RAIN_125.floatdata1 : rainfallLayer[18].floatdata1);
+            if (TFC_Climate.getCacheManager(world) == null) return;
+
+            DataLayer[] rockLayer1i = TFCDataLayers[0];
+            DataLayer[] rockLayer2i = TFCDataLayers[1];
+            DataLayer[] rockLayer3i = TFCDataLayers[2];
+            DataLayer[] evtLayeri = TFCDataLayers[3];
+            DataLayer[] rainfallLayeri = TFCDataLayers[4];
+            DataLayer[] stabilityLayeri = TFCDataLayers[5];
+            DataLayer[] drainageLayeri = TFCDataLayers[6];
+
+            int i = TFC_Core.getRockLayerFromHeight(world,coord.x,coord.y,coord.z);
+            layer = i==0?defaultIfNull(rockLayer1i) : i==1? defaultIfNull(rockLayer2i) : defaultIfNull(rockLayer3i);
+            topBlock = TFC_Core.getTypeForGrassWithRain(layer.data1, rainfallLayeri[18] == null ? DataLayer.RAIN_125.floatdata1 : rainfallLayeri[18].floatdata1);
             fillerBlock = TFC_Core.getTypeForDirtFromGrass(topBlock);
+            mainBlock = layer.block;
+            useTFCBlock=true;
         }else {
             BiomeGenBase biome = world.getBiomeGenForCoords(coord.x, coord.z);
             topBlock = biome.topBlock != null ? biome.topBlock : Blocks.air;
             fillerBlock = biome.fillerBlock != null ? biome.fillerBlock : Blocks.air;
         }
-        Block mainBlock = world.provider.dimensionId == -1 ? Blocks.netherrack : (world.provider.dimensionId == 1 ? Blocks.end_stone : Blocks.stone);
 
         boolean useStoneBlock = hasBlockAbove(world, coord.x, coord.y, coord.z, mainBlock);
 
@@ -117,7 +134,7 @@ public class TransformerNatural extends TransformerSingleBlock<NBTNone>
                     if (replaceable)
                     {
                         Block setBlock = useStoneBlock ? mainBlock : (isTopBlock(world, currentX, currentY, currentZ) ? topBlock : fillerBlock);
-                        context.setBlock(currentX, currentY, currentZ, BlockStates.defaultState(setBlock));
+                        context.setBlock(currentX, currentY, currentZ, useTFCBlock?BlockStates.fromMetadata(setBlock,useStoneBlock?layer.data2:layer.data1):BlockStates.defaultState(setBlock));
                     }
 
                     // Uncommenting makes performance shit

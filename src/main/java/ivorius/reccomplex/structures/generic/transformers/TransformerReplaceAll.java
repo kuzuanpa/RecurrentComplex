@@ -5,6 +5,7 @@
 
 package ivorius.reccomplex.structures.generic.transformers;
 
+import com.bioxx.tfc.WorldGen.DataLayer;
 import com.google.gson.*;
 import ivorius.ivtoolkit.blocks.BlockCoord;
 import ivorius.ivtoolkit.gui.IntegerRange;
@@ -69,7 +70,7 @@ public class TransformerReplaceAll extends TransformerSingleBlock<TransformerRep
     }
 
     @Override
-    public void transformBlock(InstanceData instanceData, Phase phase, StructureSpawnContext context, BlockCoord coord, IBlockState sourceState)
+    public void transformBlock(InstanceData instanceData, Phase phase, StructureSpawnContext context, BlockCoord coord, IBlockState sourceState, DataLayer[][] TFCDataLayers)
     {
         TransformerReplace.setBlockWith(context, coord, context.world, instanceData.blockState, instanceData.tileEntityInfo);
     }

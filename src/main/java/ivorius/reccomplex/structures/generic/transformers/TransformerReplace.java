@@ -5,6 +5,7 @@
 
 package ivorius.reccomplex.structures.generic.transformers;
 
+import com.bioxx.tfc.WorldGen.DataLayer;
 import com.google.gson.*;
 import ivorius.ivtoolkit.blocks.BlockCoord;
 import ivorius.ivtoolkit.random.WeightedSelector;
@@ -100,7 +101,7 @@ public class TransformerReplace extends TransformerSingleBlock<NBTNone>
     }
 
     @Override
-    public void transformBlock(NBTNone instanceData, Phase phase, StructureSpawnContext context, BlockCoord coord, IBlockState sourceState)
+    public void transformBlock(NBTNone instanceData, Phase phase, StructureSpawnContext context, BlockCoord coord, IBlockState sourceState, DataLayer[][] TFCDataLayers)
     {
         WeightedBlockState blockState;
         if (destination.list.size() > 0)

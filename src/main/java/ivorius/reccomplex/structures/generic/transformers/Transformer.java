@@ -5,6 +5,7 @@
 
 package ivorius.reccomplex.structures.generic.transformers;
 
+import com.bioxx.tfc.WorldGen.DataLayer;
 import ivorius.ivtoolkit.tools.IvWorldData;
 import ivorius.reccomplex.gui.table.TableDataSource;
 import ivorius.reccomplex.gui.table.TableDelegate;
@@ -17,6 +18,7 @@ import ivorius.reccomplex.utils.NBTStorable;
 import net.minecraft.nbt.NBTBase;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -34,7 +36,7 @@ public interface Transformer<S extends NBTStorable>
 
     boolean skipGeneration(S instanceData, IBlockState state);
 
-    void transform(S instanceData, Phase phase, StructureSpawnContext context, IvWorldData worldData, List<Pair<Transformer, NBTStorable>> transformers);
+    void transform(S instanceData, Phase phase, StructureSpawnContext context, IvWorldData worldData, List<Pair<Transformer, NBTStorable>> transformers, @Nullable DataLayer[][] TFCDataLayers);
 
     boolean generatesInPhase(S instanceData, Phase phase);
 

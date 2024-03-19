@@ -5,6 +5,7 @@
 
 package ivorius.reccomplex.structures.generic.transformers;
 
+import com.bioxx.tfc.WorldGen.DataLayer;
 import com.google.gson.*;
 import ivorius.ivtoolkit.blocks.*;
 import ivorius.ivtoolkit.tools.IvWorldData;
@@ -130,7 +131,7 @@ public class TransformerRuins implements Transformer<TransformerRuins.InstanceDa
     }
 
     @Override
-    public void transform(InstanceData instanceData, Phase phase, StructureSpawnContext context, IvWorldData worldData, List<Pair<Transformer, NBTStorable>> transformers)
+    public void transform(InstanceData instanceData, Phase phase, StructureSpawnContext context, IvWorldData worldData, List<Pair<Transformer, NBTStorable>> transformers, DataLayer[][] TFCDataLayers)
     {
         IvBlockCollection blockCollection = worldData.blockCollection;
         int[] size = context.boundingBoxSize();

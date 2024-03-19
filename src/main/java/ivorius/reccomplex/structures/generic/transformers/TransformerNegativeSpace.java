@@ -5,6 +5,7 @@
 
 package ivorius.reccomplex.structures.generic.transformers;
 
+import com.bioxx.tfc.WorldGen.DataLayer;
 import com.google.gson.*;
 import ivorius.ivtoolkit.tools.IvWorldData;
 import ivorius.ivtoolkit.tools.MCRegistry;
@@ -52,7 +53,7 @@ public class TransformerNegativeSpace implements Transformer<NBTNone>
     }
 
     @Override
-    public void transform(NBTNone instanceData, Phase phase, StructureSpawnContext context, IvWorldData worldData, List<Pair<Transformer, NBTStorable>> transformers)
+    public void transform(NBTNone instanceData, Phase phase, StructureSpawnContext context, IvWorldData worldData, List<Pair<Transformer, NBTStorable>> transformers, DataLayer[][] TFCDataLayers)
     {
 
     }
