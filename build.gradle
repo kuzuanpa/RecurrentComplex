@@ -18,7 +18,7 @@ buildscript {
 }
 apply plugin: 'forge'
 
-version = "0.9.7.1.1"
+
 def ENV = System.getenv()
 if (ENV.DRONE_BUILD_NUMBER) {
     version += ".n" + ENV.DRONE_BUILD_NUMBER
@@ -37,6 +37,15 @@ dependencies {
 
 processResources
 {
+    // This will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // Replace values in only mcmod.info.
+    filesMatching('mcmod.info') {
+        // Replace version and mcversion.
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
 }
 
 sourceCompatibility = 1.8

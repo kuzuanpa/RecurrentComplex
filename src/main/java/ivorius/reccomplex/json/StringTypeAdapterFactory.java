@@ -8,7 +8,6 @@ package ivorius.reccomplex.json;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.gson.*;
-import ivorius.reccomplex.json.JsonUtils;
 
 
 import java.lang.reflect.Type;

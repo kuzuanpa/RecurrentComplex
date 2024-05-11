@@ -9,7 +9,9 @@ import com.bioxx.tfc.Core.TFC_Climate;
 import com.bioxx.tfc.Core.TFC_Core;
 import com.bioxx.tfc.WorldGen.DataLayer;
 import com.bioxx.tfc.WorldGen.TFCProvider;
+import com.bioxx.tfc.api.TFCBlocks;
 import com.google.gson.*;
+import cpw.mods.fml.common.FMLLog;
 import ivorius.ivtoolkit.blocks.BlockCoord;
 import ivorius.ivtoolkit.blocks.IvBlockCollection;
 import ivorius.ivtoolkit.tools.IvWorldData;
@@ -43,6 +45,7 @@ import net.minecraft.world.WorldServer;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.common.BiomeDictionary;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.Level;
 
 import java.lang.reflect.Type;
 import java.util.*;
@@ -116,17 +119,43 @@ public class GenericStructureInfo implements StructureInfo<GenericStructureInfo.
     }
     public DataLayer defaultIfNull(DataLayer[] nullCheck){return nullCheck==null||nullCheck[18] == null ? DataLayer.GRANITE : nullCheck[18];}
 
-    public IvBlockCollection transformVanillaBlocksToTFC(IvBlockCollection originalBlocks, World world, BlockCoord coord,DataLayer[][] dataLayers){
+    public IvBlockCollection transformVanillaBlocksToTFC(IvBlockCollection originalBlocks, World world, BlockCoord structureLowCoord,DataLayer[][] dataLayers){
         try {
-
-
-            int i = TFC_Core.getRockLayerFromHeight(world, coord.x, coord.y, coord.z);
+            int i = TFC_Core.getRockLayerFromHeight(world, structureLowCoord.x, structureLowCoord.y, structureLowCoord.z);
             DataLayer layer = i == 0 ? defaultIfNull(dataLayers[0]) : i == 1 ? defaultIfNull(dataLayers[1]) : defaultIfNull(dataLayers[2]);
-            Block grass = TFC_Core.getTypeForGrassWithRain(layer.data1, dataLayers[4][18] == null ? DataLayer.RAIN_125.floatdata1 : dataLayers[4][18].floatdata1);
-            Block dirt = TFC_Core.getTypeForDirtFromGrass(grass);
-            Block stone = layer.block;
-            Block sand = TFC_Core.getTypeForSand(layer.data2);
+            Block grass            = TFC_Core.getTypeForGrassWithRain(layer.data1, dataLayers[4][18] == null ? DataLayer.RAIN_125.floatdata1 : dataLayers[4][18].floatdata1);
+            Block dirt             = TFC_Core.getBuildingDirt(TFC_Core.getTypeForDirtFromGrass(grass));
+            Block stone            = TFC_Core.getBuildingStone(layer.block);
+            Block stoneSmooth      = TFC_Core.getSmoothStone(layer.block);
+            Block stoneCobble      = TFC_Core.getBuildingCobble(layer.block);
+            Block stoneBrick       = TFC_Core.getStoneBrick(layer.block);
+            Block stoneChiseled    = stoneSmooth;
+            Block stoneCrackBrick  = stoneBrick;
+            Block stoneCobbleMossy = stoneCobble;
+            Block stoneMossyBrick  = stoneBrick;
+            Block wallCobble       = TFC_Core.getCobbleWall(layer.block);
+
+            Block sand = TFC_Core.getTypeForSand(layer.data1);
+            Block gravel = TFC_Core.getTypeForGravel(layer.data1);
+            originalBlocks.forEach(blockCoord->{
+                     if(originalBlocks.getBlock(blockCoord)==Blocks.stone                                                    ){originalBlocks.setBlock(blockCoord,stone);               originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.dirt                                                     ){originalBlocks.setBlock(blockCoord,dirt);                originalBlocks.setMetadata(blockCoord,(byte)layer.data1);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.sand                                                     ){originalBlocks.setBlock(blockCoord,sand);                originalBlocks.setMetadata(blockCoord,(byte)layer.data1);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.gravel                                                   ){originalBlocks.setBlock(blockCoord,gravel);              originalBlocks.setMetadata(blockCoord,(byte)layer.data1);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.cobblestone                                              ){originalBlocks.setBlock(blockCoord,stoneCobble);         originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.stonebrick && originalBlocks.getMetadata(blockCoord) == 0){originalBlocks.setBlock(blockCoord,stoneBrick);          originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.stonebrick && originalBlocks.getMetadata(blockCoord) == 1){originalBlocks.setBlock(blockCoord,stoneMossyBrick);     originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.stonebrick && originalBlocks.getMetadata(blockCoord) == 2){originalBlocks.setBlock(blockCoord,stoneCrackBrick);     originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.stonebrick && originalBlocks.getMetadata(blockCoord) == 3){originalBlocks.setBlock(blockCoord,stoneChiseled);       originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.cobblestone_wall                                         ){originalBlocks.setBlock(blockCoord,wallCobble);          originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.mossy_cobblestone                                        ){originalBlocks.setBlock(blockCoord,stoneCobbleMossy);    originalBlocks.setMetadata(blockCoord,(byte)layer.data2);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.grass                                                    ){originalBlocks.setBlock(blockCoord,grass);               originalBlocks.setMetadata(blockCoord,(byte)layer.data1);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.tallgrass  && originalBlocks.getMetadata(blockCoord) == 1){originalBlocks.setBlock(blockCoord, TFCBlocks.tallGrass);originalBlocks.setMetadata(blockCoord,(byte) 0);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.tallgrass  && originalBlocks.getMetadata(blockCoord) == 2){originalBlocks.setBlock(blockCoord, TFCBlocks.tallGrass);originalBlocks.setMetadata(blockCoord,(byte) 1);}
+                else if(originalBlocks.getBlock(blockCoord)==Blocks.vine                                                     ){originalBlocks.setBlock(blockCoord, TFCBlocks.vine);}
+            });
         }catch (NullPointerException e){
+            e.printStackTrace();
             return null;
         }
         return originalBlocks;
